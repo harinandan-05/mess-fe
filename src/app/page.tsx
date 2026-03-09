@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingDown, TrendingUp, Scale, Info, DollarSign } from "lucide-react";
 import { WasteTrendChart } from "@/components/charts/waste-trend-chart";
 import { MealTypeChart } from "@/components/charts/meal-type-chart";
+import { TodayMenu } from "@/components/dashboard/today-menu";
 
 export default function Dashboard() {
   const stats = [
@@ -83,27 +84,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Today's Menu (Preview)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center border-b border-[var(--color-border)] pb-2">
-                <span className="text-sm font-medium">Breakfast</span>
-                <span className="text-xs text-[var(--color-muted)]">Idli, Sambar, Chutney</span>
-              </div>
-              <div className="flex justify-between items-center border-b border-[var(--color-border)] pb-2">
-                <span className="text-sm font-medium">Lunch</span>
-                <span className="text-xs text-[var(--color-muted)]">Rice, Dal, Cabbage Sabzi</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium">Dinner</span>
-                <span className="text-xs text-[var(--color-muted)]">Chapati, Paneer, Rice</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <TodayMenu />
       </div>
     </div>
   );
