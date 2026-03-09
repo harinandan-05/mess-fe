@@ -2,13 +2,9 @@
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
-const data = [
-  { name: "Breakfast", waste: 28.5 },
-  { name: "Lunch", waste: 42.1 },
-  { name: "Dinner", waste: 52.4 },
-];
+export function MealTypeChart({ data }: { data: { name: string, waste: number }[] }) {
+  if (!data || data.length === 0) return <div className="h-[250px] w-full mt-4 flex items-center justify-center text-[var(--color-muted)] text-sm">Loading chart...</div>;
 
-export function MealTypeChart() {
   return (
     <div className="h-[250px] w-full mt-4">
       <ResponsiveContainer width="100%" height="100%">

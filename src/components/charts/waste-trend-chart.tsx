@@ -2,17 +2,9 @@
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
-const data = [
-  { day: "Mon", waste: 14.2 },
-  { day: "Tue", waste: 12.8 },
-  { day: "Wed", waste: 15.1 },
-  { day: "Thu", waste: 18.4 },
-  { day: "Fri", waste: 16.2 },
-  { day: "Sat", waste: 21.5 },
-  { day: "Sun", waste: 24.8 },
-];
+export function WasteTrendChart({ data }: { data: { day: string, waste: number }[] }) {
+  if (!data || data.length === 0) return <div className="h-[250px] w-full mt-4 flex items-center justify-center text-[var(--color-muted)] text-sm">Loading chart...</div>;
 
-export function WasteTrendChart() {
   return (
     <div className="h-[250px] w-full mt-4">
       <ResponsiveContainer width="100%" height="100%">

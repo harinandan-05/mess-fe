@@ -29,66 +29,99 @@ const defaultWeeklyMenu: WeeklyMenu = {
   Sunday: { Breakfast: "", Lunch: "", Dinner: "" }
 };
 
+const API_BASE_URL = "http://localhost:3001/api";
+
 export function useMenuStore() {
   const [weeklyMenu, setWeeklyMenu] = useState<WeeklyMenu>(defaultWeeklyMenu);
   const [entries, setEntries] = useState<DailyEntry[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load from localStorage on mount
+  // Fetch from backend on mount
   useEffect(() => {
-    const storedMenu = localStorage.getItem("messTracker_WeeklyMenu");
-    if (storedMenu) {
+    const fetchData = async () => {
       try {
-        setWeeklyMenu(JSON.parse(storedMenu));
-      } catch (e) {
-        console.error("Error parsing weekly menu", e);
-      }
-    }
+        const [menuRes, entriesRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/menu`),
+          fetch(`${API_BASE_URL}/entries`)
+        ]);
 
-    const storedEntries = localStorage.getItem("messTracker_Entries");
-    if (storedEntries) {
-      try {
-        setEntries(JSON.parse(storedEntries));
+        if (menuRes.ok) {
+          const menuData = await menuRes.json();
+          // Merge with default to ensure all days exist
+          setWeeklyMenu({ ...defaultWeeklyMenu, ...menuData });
+        }
+        
+        if (entriesRes.ok) {
+          const entriesData = await entriesRes.json();
+          setEntries(entriesData);
+        }
       } catch (e) {
-        console.error("Error parsing entries", e);
+        console.error("Error fetching data from API:", e);
+      } finally {
+        setIsLoaded(true);
       }
-    }
-    
-    setIsLoaded(true);
+    };
+
+    fetchData();
   }, []);
 
-  // Save weekly menu
-  const updateMenu = (day: DayOfWeek, meal: MealType, items: string) => {
-    setWeeklyMenu((prev) => {
-      const updated = {
-        ...prev,
-        [day]: {
-          ...prev[day],
-          [meal]: items
-        }
-      };
-      localStorage.setItem("messTracker_WeeklyMenu", JSON.stringify(updated));
-      return updated;
-    });
+  // Save weekly menu to backend
+  const updateMenu = async (day: DayOfWeek, meal: MealType, items: string) => {
+    // Optimistic update
+    setWeeklyMenu((prev: WeeklyMenu) => ({
+      ...prev,
+      [day]: {
+        ...prev[day],
+        [meal]: items
+      }
+    }));
+
+    try {
+      await fetch(`${API_BASE_URL}/menu`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dayOfWeek: day, mealType: meal, items })
+      });
+    } catch (e) {
+      console.error("Failed to update menu in DB:", e);
+    }
   };
 
-  // Save daily entry
-  const addDailyEntry = (date: string, dayOfWeek: DayOfWeek, totalWaste: number) => {
-    setEntries((prev) => {
-      // Check if entry for this date already exists, update if so
-      const existingIndex = prev.findIndex(e => e.date === date);
+  // Save daily entry to backend
+  const addDailyEntry = async (date: string, dayOfWeek: DayOfWeek, totalWaste: number) => {
+    // We only have the minimal info here. The actual detailed entry form would send more,
+    // but for now we mock the other fields to fit the backend schema.
+    const optimisticEntry: DailyEntry = { date, dayOfWeek, totalWaste };
+    
+    setEntries((prev: DailyEntry[]) => {
+      const existingIndex = prev.findIndex((e: DailyEntry) => e.date === date);
       let updated;
-      
       if (existingIndex >= 0) {
         updated = [...prev];
-        updated[existingIndex] = { date, dayOfWeek, totalWaste };
+        updated[existingIndex].totalWaste += totalWaste; // aggregate
       } else {
-        updated = [...prev, { date, dayOfWeek, totalWaste }];
+        updated = [...prev, optimisticEntry];
       }
-      
-      localStorage.setItem("messTracker_Entries", JSON.stringify(updated));
       return updated;
     });
+
+    try {
+      await fetch(`${API_BASE_URL}/entries`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date,
+          dayOfWeek,
+          mealType: "Unknown", // store doesn't track this yet
+          foodPrepared: totalWaste * 10, // dummy calculation
+          foodWasted: totalWaste,
+          totalStudents: 100,
+          totalStudentsAte: 80
+        })
+      });
+    } catch (e) {
+      console.error("Failed to add entry in DB:", e);
+    }
   };
 
   const getMenuForDay = (day: DayOfWeek | null) => {
